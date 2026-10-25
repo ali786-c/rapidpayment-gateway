@@ -171,12 +171,14 @@ function rapidgateway_link($params)
     $email         = $params['clientdetails']['email'];
     $phone         = $params['clientdetails']['phonenumber'];
 
-    // Format Mobile to standard Pakistani 03XXXXXXXXX if applicable
+    // Sanitize mobile number (Ensure format 03XXXXXXXXX)
     $cleanMobile = preg_replace('/[^0-9]/', '', $phone);
     if (substr($cleanMobile, 0, 2) === '92') {
         $cleanMobile = '0' . substr($cleanMobile, 2);
+    } elseif (strlen($cleanMobile) === 10 && substr($cleanMobile, 0, 1) === '3') {
+        $cleanMobile = '0' . $cleanMobile;
     }
-    if (empty($cleanMobile) || strlen($cleanMobile) < 10) {
+    if (empty($cleanMobile) || strlen($cleanMobile) < 11) {
         $cleanMobile = '03001234567';
     }
 
@@ -242,10 +244,13 @@ function rapidgateway_link($params)
         $rawResponse = curl_exec($ch);
         $redirectUrl = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
         if (!empty($redirectUrl)) {
-            header('Location: ' . $redirectUrl);
+            echo '<script type="text/javascript">window.location.href = ' . json_encode($redirectUrl) . ';</script>';
+            echo '<noscript><meta http-equiv="refresh" content="0;url=' . htmlspecialchars($redirectUrl) . '"></noscript>';
+            echo '<div class="alert alert-info text-center">Redirecting to RapidGateway... <a href="' . htmlspecialchars($redirectUrl) . '" class="btn btn-sm btn-primary">Click here if not redirected</a></div>';
             exit;
         }
 
@@ -253,17 +258,33 @@ function rapidgateway_link($params)
         $decoded = json_decode($rawResponse, true);
         if (!empty($decoded['redirect_url']) || !empty($decoded['checkout_url'])) {
             $dest = $decoded['redirect_url'] ?? $decoded['checkout_url'];
-            header('Location: ' . $dest);
+            echo '<script type="text/javascript">window.location.href = ' . json_encode($dest) . ';</script>';
+            echo '<div class="alert alert-info text-center">Redirecting to RapidGateway... <a href="' . htmlspecialchars($dest) . '" class="btn btn-sm btn-primary">Click here</a></div>';
             exit;
         }
 
+        $errorMsg = 'Payment initiation failed (HTTP ' . $httpCode . ')';
+        if (!empty($curlError)) {
+            $errorMsg .= ': ' . $curlError;
+        } elseif (!empty($decoded['message'])) {
+            $errorMsg .= ': ' . $decoded['message'];
+        } elseif (!empty($decoded['error'])) {
+            $errorMsg .= ': ' . $decoded['error'];
+        } elseif (!empty($rawResponse)) {
+            $errorMsg .= ': ' . substr(strip_tags($rawResponse), 0, 150);
+        }
+
         logTransaction('rapidgateway', [
+            'processUrl' => $processUrl,
             'payload' => $payload,
             'response' => $rawResponse,
+            'curlError' => $curlError,
             'httpCode' => $httpCode,
         ], 'Payment Initiation Failed');
 
-        return '<div class="alert alert-danger text-center">Unable to redirect to RapidGateway checkout. Please try again.</div>';
+        return '<div class="alert alert-danger text-center" style="margin-top:10px;">
+            <strong>RapidGateway Error:</strong> ' . htmlspecialchars($errorMsg) . '
+        </div>';
     }
 
     // Output clean form conforming to WHMCS Third-Party Gateway specs
