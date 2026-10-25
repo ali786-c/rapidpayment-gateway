@@ -208,11 +208,14 @@ function rapidgateway_link($params)
             ? 'https://secure.rapid-gateway.com/sandbox/process-transaction' 
             : 'https://secure.rapid-gateway.com/rapid/process-transaction';
 
-        // Basket ID must be URL-safe and unique per payment attempt (Idempotency key)
-        $basketId = 'INV' . $invoiceId . '-' . time();
+        // RapidGateway Sandbox requires a numeric merchant ID in transaction payload
+        $apiMerchantId = $merchantId;
+        if ($testMode && !is_numeric($apiMerchantId)) {
+            $apiMerchantId = '102'; // Official RapidGateway Sandbox test merchant ID
+        }
 
         $payload = [
-            'MERCHANT_ID'            => $merchantId,
+            'MERCHANT_ID'            => $apiMerchantId,
             'MERCHANT_NAME'          => $merchantName,
             'TXNAMT'                 => number_format((float)$amount, 2, '.', ''),
             'CURRENCY_CODE'          => 'PKR',
