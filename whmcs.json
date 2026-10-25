@@ -1,0 +1,31 @@
+{
+    "schema": "1.0",
+    "type": "whmcs-gateways",
+    "name": "rapidgateway",
+    "license": "MIT",
+    "category": "gateway",
+    "description": {
+        "name": "RapidGateway (PKR)",
+        "tagline": "Accept cards, mobile wallets (JazzCash, EasyPaisa), bank transfer and Raast payments in PKR via OAuth2-backed RapidGateway.",
+        "long": "Official WHMCS Payment Gateway Module for RapidGateway. Features automatic token authentication, hosted checkout redirect, signed HMAC-SHA256 webhook callback verification, and automated invoice reconciliation.",
+        "features": [
+            "OAuth2 Bearer token generation",
+            "Full support for PKR transactions",
+            "Signed webhook notifications (HMAC-SHA256) with 5-minute replay prevention",
+            "Automatic invoice status updates (Paid / Unpaid)",
+            "Sandbox / Test mode support",
+            "Refunds API integration from WHMCS Admin"
+        ]
+    },
+    "support": {
+        "homepage": "https://secure.rapid-gateway.com",
+        "email": "support@rapidgateway.pk",
+        "docs_url": "https://developers.whmcs.com/payment-gateways/"
+    },
+    "authors": [
+        {
+            "name": "Zedgehost / RapidGateway",
+            "homepage": "https://secure.rapid-gateway.com"
+        }
+    ]
+}
